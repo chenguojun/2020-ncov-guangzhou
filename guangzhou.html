@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>广州市新型冠状病毒确诊病例分布地图</title>
+    <meta name="keywords" content="武汉加油,广州疫情,疫情地图,广州,新冠病毒,地图,病例,新型冠状病毒">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            width: 100%;
+            height: 20rem;
+        }
+    </style>
+
+    <script src="https://map.qq.com/api/js?v=2.exp&key=NXPBZ-A3ZWG-LFOQ3-IOJ4A-27YTJ-ELFYO"></script>
+    <script crossorigin="anonymous" integrity="sha384-rY/jv8mMhqDabXSo+UCggqKtdmBfd3qC2/KvyTDNQ6PcUJXaxK1tMepoQda4g5vB"
+            src="https://lib.baomitu.com/jquery/2.2.4/jquery.min.js"></script>
+
+    <script>
+        /*百度统计代码*/
+        var _hmt = _hmt || [];
+        (function () {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?99ec4665b77821b87d78fbb726071aff";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+
+        let markers = [];
+        let map = null;
+        let info = null;
+        let location_lon = 0;
+        let location_lat = 0;
+
+        function initMap() {
+            var center = new qq.maps.LatLng(23.149135, 113.258340);
+            map = new qq.maps.Map(document.getElementById('container'), {
+                center: center,
+                zoom: 12
+            });
+            info = new qq.maps.InfoWindow({
+                map: map
+            });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    location_lon = position.coords.longitude;
+                    location_lat = position.coords.latitude;
+                    $.get("https://2020-ncov.yuyisoft.net/getGuangzhouList.php", {
+                        action: 1,
+                        lng: location_lon,
+                        lat: location_lat
+                    }, res => {
+                        location_lon = res.locations[0].lng;
+                        location_lat = res.locations[0].lat;
+                        getItem("白云区")
+                        new qq.maps.Marker({
+                            position: new qq.maps.LatLng(res.locations[0].lat, res.locations[0].lng),
+                            map: map,
+                            icon: new qq.maps.MarkerImage("https://2020-ncov.yuyisoft.net/img/my.png", null, null, null, new qq.maps.Size(18, 18))
+                        })
+                    }, "json")
+                }, function (res) {
+                    alert("获取定位失败，请刷新页面");
+                }, {
+                    timeout: 1000
+                })
+            } else {
+                alert("您的设备不支持定位功能，无法计算距离");
+            }
+        }
+
+        function getItem(area) {
+            for (let i = 0; i < markers.length; i++) {
+                markers[i].setMap(null)
+            }
+            document.getElementById("list").innerHTML = ""
+            $.get("https://2020-ncov.yuyisoft.net/getGuangzhouList.php", {
+                    lng: location_lon,
+                    lat: location_lat,
+                    area: area
+                },
+                res => {
+                    for (var i = 0; i < res.result.data.length; i++) {
+                        var marker = new qq.maps.Marker({
+                            position: new qq.maps.LatLng(res.result.data[i].location.lat, res.result.data[i].location.lng),
+                            map: map,
+                            title: res.result.data[i].title,
+                            icon: new qq.maps.MarkerImage("https://2020-ncov.yuyisoft.net/img/marker.png", null, null, null, new qq.maps.Size(25, 25))
+                        })
+                        //获取标记的点击事件
+                        qq.maps.event.addListener(marker, 'click', function (res) {
+                            info.open();
+                            info.setContent('<div style="text-align:center;white-space:nowrap;' +
+                                'margin:10px;">' + res.target.title + '</div>');
+                            info.setPosition(res.latLng);
+                        });
+                        markers.push(marker);
+                        var tmp = document.createElement("div")
+                        var distance = res.result.data[i]._distance / 1000
+                        tmp.innerHTML = "<div class=\"item\">    <div class=\"value\">\n" +
+                            "        <span>" + res.result.data[i].title + "</span>\n" +
+                            "        <span class=\"confirmed\">确诊" + res.result.data[i].x.count + "例</span>\n" +
+                            "    </div>\n" +
+                            "    <div class=\"value\">\n" +
+                            "        <span>距离我 <span style=\"color:red\">" + distance.toFixed(2) + "</span> km</span>\n" +
+                            "    </div></div>"
+                        document.getElementById("list").appendChild(tmp)
+                    }
+                    map.panTo(new qq.maps.LatLng(res.result.data[0].location.lat, res.result.data[0].location.lng))
+                }, "json")
+
+        }
+    </script>
+</head>
+<body onload="initMap()">
+<!-- 定义地图显示容器 -->
+<div id="container"></div>
+<div style="display: flex;background-color: #ffd996;" class="center">
+    <svg t="1580810265252" class="icon" viewBox="0 0 1144 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
+         p-id="2377" width="200" height="200">
+        <path d="M534.196706 896.030118c-16.956235-14.516706-35.870118-30.418824-55.235765-46.290824-127.698824-104.658824-159.292235-113.423059-180.705882-113.423059-0.421647 0-0.813176 0.120471-1.204706 0.120471-0.451765 0-0.843294-0.120471-1.264941-0.120471H104.688941c-22.076235 0-27.166118-6.324706-27.166117-28.702117V317.409882c0-15.179294 1.807059-24.726588 19.877647-24.726588H271.36c20.871529 0 52.886588-8.673882 192.572235-112.188235a4400.790588 4400.790588 0 0 0 70.264471-53.278118v768.813177zM589.673412 11.504941a39.936 39.936 0 0 0-42.616471 4.818824c-0.602353 0.481882-59.663059 48.007529-124.928 96.617411-113.483294 84.600471-146.522353 98.695529-153.238588 100.894118H108.152471c-0.813176 0-1.596235 0.150588-2.409412 0.150588H33.129412C14.787765 213.985882 0 229.014588 0 247.506824v535.311058c0 18.522353 14.817882 33.520941 33.129412 33.520942h262.083764c6.625882 2.439529 37.767529 17.046588 138.480942 100.141176a4001.611294 4001.611294 0 0 1 111.676235 95.984941 40.056471 40.056471 0 0 0 43.309176 6.716235c14.486588-6.625882 23.792941-21.172706 23.792942-37.225411V48.278588c0-15.661176-8.854588-29.967059-22.799059-36.743529z"
+              fill="#F96A0E" p-id="2378"></path>
+        <path d="M946.356706 524.980706a282.112 282.112 0 0 0-138.541177-243.471059c-3.764706-2.017882-12.649412-5.903059-18.823529-5.903059-18.371765 0-33.28 15.058824-33.28 33.701647 0 12.468706 6.565647 23.612235 16.564706 29.424941a214.437647 214.437647 0 0 1 107.218823 186.24753 214.437647 214.437647 0 0 1-110.622117 188.235294c-9.577412 5.903059-15.932235 16.655059-15.932236 28.852706 0 18.612706 14.908235 33.701647 33.310118 33.701647 7.830588 0.060235 17.046588-4.608 17.046588-4.608a282.202353 282.202353 0 0 0 143.058824-246.181647"
+              fill="#F96A0E" p-id="2379"></path>
+        <path d="M896.933647 101.707294c-6.174118-3.764706-12.348235-6.806588-19.817412-6.806588-18.281412 0-33.129412 14.998588-33.129411 33.520941 0 13.342118 7.830588 24.094118 18.913882 30.177882a414.870588 414.870588 0 0 1 203.474823 357.948236c0 152.696471-81.739294 285.936941-203.233882 357.797647-10.661647 5.842824-19.847529 16.956235-19.847529 30.659764 0 18.522353 14.817882 33.551059 33.129411 33.551059 7.348706 0 13.221647-2.861176 19.576471-6.625882a481.490824 481.490824 0 0 0 236.122353-415.382588A481.490824 481.490824 0 0 0 896.903529 101.707294"
+              fill="#F96A0E" p-id="2380"></path>
+    </svg>
+    <!--    <marquee class="tip" behavior="scroll">数据来源于广州市卫生健康委员会官网，仅供参考</marquee>-->
+    <div class="tip" id="scrollText"></div>
+</div>
+
+<div style="border-bottom: gainsboro 1px solid">
+    <select class="areaList center" id="area">
+        <option value="白云区">白云区</option>
+        <option value="荔湾区">荔湾区</option>
+        <option value="越秀区">越秀区</option>
+        <option value="海珠区">海珠区</option>
+        <option value="天河区">天河区</option>
+        <option value="黄埔区">黄埔区</option>
+        <option value="番禺区">番禺区</option>
+        <option value="花都区">花都区</option>
+        <option value="南沙区">南沙区</option>
+        <option value="从化区">从化区</option>
+        <option value="增城区">增城区</option>
+    </select>
+</div>
+<div id="list">
+
+</div>
+</body>
+<script>
+    $("#area").change(function () {
+        var selected = $(this).children('option:selected').val()
+        console.log(selected)
+        getItem(selected)
+    });
+
+    var ScrollTime;
+
+    function ScrollAutoPlay(contID, scrolldir, showwidth, textwidth, steper) {
+        var PosInit, currPos;
+        with ($('#' + contID)) {
+            currPos = parseInt(css('margin-left'));
+            if (scrolldir == 'left') {
+                if (currPos < 0 && Math.abs(currPos) > textwidth) {
+                    css('margin-left', showwidth);
+                } else {
+                    css('margin-left', currPos - steper);
+                }
+            } else {
+                if (currPos > showwidth) {
+                    css('margin-left', (0 - textwidth));
+                } else {
+                    css('margin-left', currPos - steper);
+                }
+            }
+        }
+    }
+
+    function ScrollText(AppendToObj, ShowHeight, ShowWidth, ShowText, ScrollDirection, Steper, Interval) {
+        var TextWidth, PosInit, PosSteper;
+        with (AppendToObj) {
+            html('');
+            css('overflow', 'hidden');
+            css('height', ShowHeight + 'px');
+            css('line-height', ShowHeight + 'px');
+            css('width', ShowWidth);
+        }
+        if (ScrollDirection == 'left') {
+            PosInit = ShowWidth;
+            PosSteper = Steper;
+        } else {
+            PosSteper = 0 - Steper;
+        }
+        if (Steper < 1 || Steper > ShowWidth) {
+            Steper = 1
+        }//每次移动间距超出限制(单位:px)
+        if (Interval < 1) {
+            Interval = 10
+        }//每次移动的时间间隔（单位：毫秒）
+        var Container = $('<div></div>');
+        var ContainerID = 'ContainerTemp';
+        var i = 0;
+        while ($('#' + ContainerID).length > 0) {
+            ContainerID = ContainerID + '_' + i;
+            i++;
+        }
+        with (Container) {
+            attr('id', ContainerID);
+            css('float', 'left');
+            css('cursor', 'default');
+            appendTo(AppendToObj);
+            html(ShowText);
+            // TextWidth = width();
+            TextWidth = 1800;
+            if (isNaN(PosInit)) {
+                PosInit = 0 - TextWidth;
+            }
+            css('margin-left', PosInit);
+            mouseover(function () {
+                clearInterval(ScrollTime);
+            });
+            mouseout(function () {
+                ScrollTime = setInterval("ScrollAutoPlay('" + ContainerID + "','" + ScrollDirection + "'," + ShowWidth + ',' + TextWidth + "," + PosSteper + ")", Interval);
+            });
+        }
+        ScrollTime = setInterval("ScrollAutoPlay('" + ContainerID + "','" + ScrollDirection + "'," + ShowWidth + ',' + TextWidth + "," + PosSteper + ")", Interval);
+    }
+
+    $(document).ready(function (e) {
+        ScrollText($('#scrollText'), 23, 400, '数据更新时间：2020-02-05 14:40，截至2月4日24时，广州市累计报告新型冠状病毒感染的肺炎确诊病例237例，其中白云区58例、海珠区37例、天河区36例、越秀区27例、番禺区25例、黄埔区13例、花都区12例、增城区12例、荔湾区8例、南沙区8例、从化区1例。数据来源于广州市卫生健康委员会官网，仅供参考', 'left', 1, 20);//滚动字幕
+    });
+</script>
+<style>
+    .confirmed {
+        color: white;
+        background-color: red;
+        font-size: 0.7rem;
+        padding: 2px 5px;
+        border-radius: 5px;
+    }
+
+    .value {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 94%;
+        margin-left: 3%;
+        font-size: 0.9rem;
+    }
+
+    .center {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .icon {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
+        margin-left: 0.5rem;
+    }
+
+    .areaList {
+        padding: 5px;
+        width: 90%;
+        margin: 5px 5%;
+        border-radius: 50px;
+        border: none;
+        background-color: #e0e0e0;
+    }
+
+    .tip {
+        padding: 0.20rem 0;
+        color: #ff7a0e;
+        font-size: 0.8rem;
+    }
+
+    .item {
+        padding: 5px 0;
+        border-bottom: gainsboro 1px solid;
+    }
+</style>
+</html>
